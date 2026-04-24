@@ -10,6 +10,20 @@ def load_data():
     projects = pd.read_csv("Final_Projects_Data.csv")
     vendors = pd.read_csv("Final_Vendors_Data.csv")
     
+    # Resiliency: Strip accidental whitespaces from CSV column headers
+    projects.columns = projects.columns.str.strip()
+    vendors.columns = vendors.columns.str.strip()
+    
+    # Resiliency: Auto-generate Stacked Firm names if missing from custom datasets
+    if 'Firm_Stacked' not in vendors.columns and 'Firm' in vendors.columns:
+        vendors['Firm_Stacked'] = vendors['Firm'].astype(str).str.replace(' ', '<br>')
+        
+    # Resiliency: Auto-calculate Active SOWs if missing from vendors CSV
+    if 'Active SOWs' not in vendors.columns and 'External Firm(s)' in projects.columns:
+        sows = projects.groupby('External Firm(s)').size().reset_index(name='Active SOWs')
+        vendors = pd.merge(vendors, sows, left_on='Firm', right_on='External Firm(s)', how='left')
+        vendors['Active SOWs'] = vendors['Active SOWs'].fillna(1)
+    
     # Identify slip severity for the hardware/nuclear side
     def evaluate_slip(row):
         if row['Schedule Delay (Days)'] == 0:
@@ -52,6 +66,7 @@ with col1:
     st.subheader("Vendor Health Matrix (Quality vs. Delivery)")
     st.markdown("High-level executive view of current vendor risk profiles.")
     
+    # Use dynamically calculated 'First-Pass Yield (%)' to prevent missing column errors
     fig_scatter = px.scatter(
         vendors_df, 
         x="Schedule Delay (Days)", 
@@ -59,7 +74,7 @@ with col1:
         size="Active SOWs",
         hover_name="Firm",
         text="Firm_Stacked",
-        color="Avg First-Pass Yield (%)",
+        color="First-Pass Yield (%)", 
         color_continuous_scale="RdYlGn"
     )
     fig_scatter.update_traces(
