@@ -58,14 +58,29 @@ with col1:
         y="First-Pass Yield (%)", 
         size="Active SOWs",
         hover_name="Firm",
-        text="Firm",
+        text="Firm_Stacked",
         color="Avg First-Pass Yield (%)",
         color_continuous_scale="RdYlGn"
     )
-    fig_scatter.update_traces(textposition='top center')
+    fig_scatter.update_traces(
+        textposition='top center',
+        textfont=dict(size=12, color="white"),
+        cliponaxis=False # Prevents labels near the edge from being cut off
+    )
     fig_scatter.add_hline(y=80, line_dash="dot", annotation_text="Quality Target (80%)", annotation_position="bottom right")
     fig_scatter.add_vline(x=30, line_dash="dot", annotation_text="Delay Threshold (30 Days)", annotation_position="top right")
-    fig_scatter.update_layout(xaxis_title="Avg Schedule Delay (Days)", yaxis_title="First-Pass Yield / Acceptance Rate (%)")
+    
+    # Pad the axes slightly so the stacked text has room to breathe
+    x_max = vendors_df["Schedule Delay (Days)"].max() if pd.notna(vendors_df["Schedule Delay (Days)"].max()) else 30
+    y_max = vendors_df["First-Pass Yield (%)"].max() if pd.notna(vendors_df["First-Pass Yield (%)"].max()) else 90
+    
+    fig_scatter.update_layout(
+        xaxis_title="Avg Schedule Delay (Days)", 
+        yaxis_title="First-Pass Yield / Acceptance Rate (%)",
+        xaxis=dict(range=[-5, max(x_max + 10, 40)]), 
+        yaxis=dict(range=[65, max(y_max + 5, 100)]),
+        height=450
+    )
     st.plotly_chart(fig_scatter, use_container_width=True)
 
 with col2:
@@ -74,15 +89,29 @@ with col2:
     
     proj_sorted = projects_df.sort_values('Schedule Delay (Days)', ascending=True)
     fig_float = go.Figure()
+    
+    # Green base layer (Thicker bar)
     fig_float.add_trace(go.Bar(
         y=proj_sorted['Project'], x=proj_sorted['Available Float (Days)'],
-        name='Available Float (Buffer)', orientation='h', marker=dict(color='rgba(44, 160, 44, 0.6)')
+        name='Available Float (Buffer)', orientation='h', 
+        marker=dict(color='#2ca02c'), # Solid Green
+        width=0.7 # Thicker to frame the red overlay
     ))
+    
+    # Red overlay layer (Thinner bar to show consumption clearly)
     fig_float.add_trace(go.Bar(
         y=proj_sorted['Project'], x=proj_sorted['Schedule Delay (Days)'],
-        name='Actual Delay', orientation='h', marker=dict(color='rgba(214, 39, 40, 0.9)')
+        name='Actual Delay (Drift)', orientation='h', 
+        marker=dict(color='#d62728'), # Glaring Red
+        width=0.4 # Thinner so it sits "inside" or shoots past the green
     ))
-    fig_float.update_layout(barmode='overlay', xaxis_title="Days")
+    
+    fig_float.update_layout(
+        barmode='overlay', # Overlays the bars instead of stacking them
+        xaxis_title="Days",
+        height=450,
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+    )
     st.plotly_chart(fig_float, use_container_width=True)
 
 st.markdown("---")
