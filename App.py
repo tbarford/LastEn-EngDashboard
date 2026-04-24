@@ -11,7 +11,7 @@ def load_data():
     projects = pd.read_csv("Final_Projects_Data.csv")
     vendors = pd.read_csv("Final_Vendors_Data.csv")
     
-    # Resiliency: Strip accidental whitespaces from CSV column headers
+
     projects.columns = projects.columns.str.strip()
     vendors.columns = vendors.columns.str.strip()
     
@@ -60,11 +60,11 @@ def load_data():
     # Synthesize Oversight Priority (Urgency + Importance)
     def calculate_priority(row):
         if row['Slip Status'] == 'CRITICAL PATH IMPACT' or row['Days to Next Deliverable'] <= 7:
-            return '🔴 HIGH (Immediate Oversight)'
+            return '🔴 HIGH'
         elif row['Slip Status'] == 'Slip (Within Float)' or row['Days to Next Deliverable'] <= 14:
-            return '🟡 MEDIUM (Prep Review)'
+            return '🟡 MEDIUM'
         else:
-            return '🟢 LOW (Monitor)'
+            return '🟢 LOW'
             
     projects['Oversight Priority'] = projects.apply(calculate_priority, axis=1)
     
@@ -79,7 +79,7 @@ def load_data():
 
 projects_df, vendors_df = load_data()
 
-st.title("External Engineering Services Command Center")
+st.title("External Engineering Services")
 st.markdown("Executive overview of vendor health, quality, and programmatic schedule risk.")
 
 # --- Executive KPIs ---
@@ -93,16 +93,16 @@ c4.metric("Hardware Non-Conformances", projects_df['NCR / SDR Count'].sum())
 st.markdown("---")
 
 # --- Oversight Prioritization Queue ---
-st.subheader("🚨 Oversight Prioritization Queue")
-st.markdown("Ranked by upcoming deliverables, critical path impact, and active schedule breaches to guide limited engineering bandwidth.")
+st.subheader("Oversight Prioritization Queue")
+st.markdown("Ranked by upcoming deliverables, critical path impact, and active schedule breaches to guide engineering bandwidth.")
 
 # Sort dataframe by Priority and then by Days to Next Deliverable
-priority_map = {'🔴 HIGH (Immediate Oversight)': 1, '🟡 MEDIUM (Prep Review)': 2, '🟢 LOW (Monitor)': 3}
+priority_map = {'🔴 HIGH': 1, '🟡 MEDIUM': 2, '🟢 LOW: 3}
 projects_df['Priority_Rank'] = projects_df['Oversight Priority'].map(priority_map)
 priority_df = projects_df.sort_values(['Priority_Rank', 'Days to Next Deliverable'])
 
 st.dataframe(
-    priority_df[['Oversight Priority', 'Days to Next Deliverable', 'Days to Project Close', 'Milestone Progress', 'Project', 'External Firm(s)', 'Phase', 'Slip Status']], 
+    priority_df[['Oversight Priority', 'Project', 'External Firm(s)', 'Days to Next Deliverable', 'Days to Project Close', 'Slip Status']], 
     use_container_width=True, 
     hide_index=True
 )
@@ -113,8 +113,8 @@ st.markdown("---")
 col1, col2 = st.columns(2)
 
 with col1:
-    st.subheader("Vendor Health Matrix (Quality vs. Delivery)")
-    st.markdown("High-level executive view of current vendor risk profiles.")
+    st.subheader("Vendor Risk Matrix (Quality vs. Delivery)")
+    
     
     # Use dynamically calculated 'First-Pass Yield (%)' to prevent missing column errors
     fig_scatter = px.scatter(
