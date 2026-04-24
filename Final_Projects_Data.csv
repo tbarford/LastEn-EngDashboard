@@ -1,4 +1,4 @@
-Project,Location,External Firm(s),Phase,Budget,Spend to Date,% Complete,Original Deadline,Forecast Completion,Notes,Budget_Num,Spend_Num,Earned Value (EV),Cost Variance (CV),Schedule Delay (Days),First-Pass Yield (%),NCR / SDR Count,On Critical Path,Available Float (Days)
+Project,External Firm(s),Phase,Available Float (Days),Schedule Delay (Days),Scope Creep / Change Orders ($),First-Pass Yield (%),NCR / SDR Count,Regulatory Milestone,Days to Next Deliverable
 Site A — Civil Package,Poland,Voss & Partners,Construction Docs,$420K,$455K,0.7,2025-08-01,2025-10-01,Scope creep flagged,420000.0,455000.0,294000.0,-161000.0,61,85,3,False,45
 Site B — Geotech Study,UK,Coastal Geotech,Field Investigation,$110K,$38K,0.3,2026-01-01,2026-01-01,On track,110000.0,38000.0,33000.0,-5000.0,0,100,0,False,120
 Site C — Permitting,Romania,Pinnacle Regulatory,Regulatory Submission,$180K,$164K,0.5,2025-06-01,2025-09-01,Missed submission; rework underway,180000.0,164000.0,90000.0,-74000.0,92,60,1,True,0
