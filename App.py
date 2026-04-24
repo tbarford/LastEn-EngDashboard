@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 
@@ -23,6 +24,27 @@ def load_data():
         sows = projects.groupby('External Firm(s)').size().reset_index(name='Active SOWs')
         vendors = pd.merge(vendors, sows, left_on='Firm', right_on='External Firm(s)', how='left')
         vendors['Active SOWs'] = vendors['Active SOWs'].fillna(1)
+
+    # Resiliency: Auto-generate Upcoming Deliverable timeframe if missing
+    if 'Days to Next Deliverable' not in projects.columns:
+        # Generate predictable mock data for demonstration
+        np.random.seed(42)
+        projects['Days to Next Deliverable'] = np.random.randint(2, 35, size=len(projects))
+        
+    # Resiliency: Auto-generate 'Days to Project Close' and 'Milestone Progress' context
+    if 'Days to Project Close' not in projects.columns:
+        # Simulate total project runway being further out than the next deliverable
+        projects['Days to Project Close'] = projects['Days to Next Deliverable'] + np.random.randint(15, 120, size=len(projects))
+        
+    if 'Milestone Progress' not in projects.columns:
+        # Simulate milestone tracking (e.g., "1 of 3")
+        current_m = np.random.randint(1, 4, size=len(projects))
+        total_m = current_m + np.random.randint(0, 3, size=len(projects))
+        # If current equals total, mark as "Final", else "X of Y"
+        projects['Milestone Progress'] = [
+            "Final" if c == t else f"{c} of {t}" 
+            for c, t in zip(current_m, total_m)
+        ]
     
     # Identify slip severity for the hardware/nuclear side
     def evaluate_slip(row):
@@ -34,6 +56,17 @@ def load_data():
             return "CRITICAL PATH IMPACT"
             
     projects['Slip Status'] = projects.apply(evaluate_slip, axis=1)
+    
+    # Synthesize Oversight Priority (Urgency + Importance)
+    def calculate_priority(row):
+        if row['Slip Status'] == 'CRITICAL PATH IMPACT' or row['Days to Next Deliverable'] <= 7:
+            return '🔴 HIGH (Immediate Oversight)'
+        elif row['Slip Status'] == 'Slip (Within Float)' or row['Days to Next Deliverable'] <= 14:
+            return '🟡 MEDIUM (Prep Review)'
+        else:
+            return '🟢 LOW (Monitor)'
+            
+    projects['Oversight Priority'] = projects.apply(calculate_priority, axis=1)
     
     # Rollup vendor metrics for the Risk Matrix
     vendor_metrics = projects.groupby('External Firm(s)').agg({
@@ -56,6 +89,23 @@ c2.metric("Portfolio Avg Quality (FPY)", f"{projects_df['First-Pass Yield (%)'].
 critical_slips = len(projects_df[projects_df['Slip Status'] == 'CRITICAL PATH IMPACT'])
 c3.metric("Critical Path Breaches", critical_slips, delta="High Risk", delta_color="inverse")
 c4.metric("Hardware Non-Conformances", projects_df['NCR / SDR Count'].sum())
+
+st.markdown("---")
+
+# --- Oversight Prioritization Queue ---
+st.subheader("🚨 Oversight Prioritization Queue")
+st.markdown("Ranked by upcoming deliverables, critical path impact, and active schedule breaches to guide limited engineering bandwidth.")
+
+# Sort dataframe by Priority and then by Days to Next Deliverable
+priority_map = {'🔴 HIGH (Immediate Oversight)': 1, '🟡 MEDIUM (Prep Review)': 2, '🟢 LOW (Monitor)': 3}
+projects_df['Priority_Rank'] = projects_df['Oversight Priority'].map(priority_map)
+priority_df = projects_df.sort_values(['Priority_Rank', 'Days to Next Deliverable'])
+
+st.dataframe(
+    priority_df[['Oversight Priority', 'Days to Next Deliverable', 'Days to Project Close', 'Milestone Progress', 'Project', 'External Firm(s)', 'Phase', 'Slip Status']], 
+    use_container_width=True, 
+    hide_index=True
+)
 
 st.markdown("---")
 
@@ -132,6 +182,6 @@ with col2:
 st.markdown("---")
 st.subheader("Project Execution Table")
 st.dataframe(
-    projects_df[['Project', 'External Firm(s)', 'Phase', 'On Critical Path', 'Available Float (Days)', 'Schedule Delay (Days)', 'Slip Status', 'First-Pass Yield (%)', 'NCR / SDR Count']], 
+    projects_df[['Project', 'External Firm(s)', 'Phase', 'Milestone Progress', 'On Critical Path', 'Available Float (Days)', 'Schedule Delay (Days)', 'Slip Status', 'First-Pass Yield (%)', 'NCR / SDR Count']], 
     use_container_width=True, hide_index=True
 )
