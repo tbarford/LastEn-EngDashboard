@@ -32,8 +32,26 @@ def load_data():
             'Regulatory Milestone': ['N/A', 'N/A', 'N/A', 'MISSED', 'N/A'] # 1 Missed Milestone
         })
 
+    # --- RESILIENCY: AUTO-GENERATE MISSING COLUMNS ---
+    # Ensures the app doesn't crash if your custom CSV is missing the newly added nuclear columns
+    np.random.seed(42)
+    
+    if 'Regulatory Milestone' not in projects.columns:
+        projects['Regulatory Milestone'] = 'N/A'
+    if 'Cost Variance (CV)' not in projects.columns:
+        projects['Cost Variance (CV)'] = np.random.randint(-50000, 20000, size=len(projects))
+    if 'Schedule Delay (Days)' not in projects.columns:
+        projects['Schedule Delay (Days)'] = np.random.randint(0, 25, size=len(projects))
+    if 'Available Float (Days)' not in projects.columns:
+        projects['Available Float (Days)'] = np.random.randint(5, 30, size=len(projects))
+    if 'First-Pass Yield (%)' not in projects.columns:
+        projects['First-Pass Yield (%)'] = np.random.uniform(70, 99, size=len(projects))
+    if 'NCR / SDR Count' not in projects.columns:
+        projects['NCR / SDR Count'] = np.random.randint(0, 4, size=len(projects))
+    if 'Discipline' not in vendors.columns:
+        vendors['Discipline'] = 'General Engineering'
+
     # --- PART 1: NUCLEAR VENDOR SCORING FRAMEWORK ---
-    # Weights: 40% Quality/Compliance, 30% Schedule, 30% Commercial
     
     # Calculate Project-level metrics first
     projects['Budget Status'] = projects['Cost Variance (CV)'].apply(lambda x: 'Overrun' if x < 0 else 'On Budget')
