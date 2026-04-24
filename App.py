@@ -203,7 +203,7 @@ with tab_vendors:
         return f'background-color: {color}'
         
     st.dataframe(
-        scorecard_df.style.applymap(highlight_breaches, subset=['Threshold Breaches']),
+        scorecard_df.style.map(highlight_breaches, subset=['Threshold Breaches']),
         use_container_width=True, hide_index=True
     )
 
