@@ -97,7 +97,7 @@ st.subheader("Oversight Prioritization Queue")
 st.markdown("Ranked by upcoming deliverables, critical path impact, and active schedule breaches to guide engineering bandwidth.")
 
 # Sort dataframe by Priority and then by Days to Next Deliverable
-priority_map = {'🔴 HIGH': 1, '🟡 MEDIUM': 2, '🟢 LOW: 3}
+priority_map = {'🔴 HIGH': 1, '🟡 MEDIUM': 2, '🟢 LOW': 3}
 projects_df['Priority_Rank'] = projects_df['Oversight Priority'].map(priority_map)
 priority_df = projects_df.sort_values(['Priority_Rank', 'Days to Next Deliverable'])
 
