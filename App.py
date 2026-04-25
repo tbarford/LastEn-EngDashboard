@@ -298,6 +298,34 @@ with tab_projects:
         else:
             st.info("No Project data available to map Schedule Risk.")
 
+    st.markdown("---")
+    st.subheader("Project Portfolio Overview")
+    st.markdown("Comprehensive view of all active scopes, contextualized by raw budget, completion timelines, and calculated creep.")
+    
+    # Dynamically pull original raw columns alongside the metrics
+    base_cols = ['Project', 'Location', 'External Firm(s)', 'Phase']
+    raw_context_cols = ['Budget', 'Spend to Date', '% Complete', 'Original Deadline', 'Forecast Completion']
+    metric_cols = ['Scope Creep / Change Orders ($)', 'Days to Next Deliverable', 'Schedule Delay (Days)', 'Slip Status']
+    
+    # Build the final list based on what actually exists in the CSV to prevent crashes
+    final_cols = []
+    for col_list in [base_cols, raw_context_cols, metric_cols]:
+        final_cols.extend([c for c in col_list if c in projects_df.columns])
+        
+    overview_df = projects_df[final_cols].copy()
+    
+    st.dataframe(
+        overview_df,
+        column_config={
+            "Scope Creep / Change Orders ($)": st.column_config.NumberColumn("Scope Creep ($)", format="$%d"),
+            "Days to Next Deliverable": st.column_config.NumberColumn("Days to Next Milestone"),
+            "Schedule Delay (Days)": st.column_config.NumberColumn("Schedule Drift (Days)"),
+            "% Complete": st.column_config.ProgressColumn("Completion Status", min_value=0, max_value=1, format="%.2f"),
+        },
+        use_container_width=True, 
+        hide_index=True
+    )
+
 # ==========================================
 # TAB 3: PROSE / EXECUTIVE SUMMARY
 # ==========================================
