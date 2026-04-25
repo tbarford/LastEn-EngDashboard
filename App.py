@@ -90,7 +90,7 @@ def load_data():
             else: return "Bi-Annual Formal + CAP"
         else:
             if breaches == 0: return "As-Needed (Post-Project)"
-            else: return "Hold on Future POs"
+            else: return "Weekly Intervention. Hold on Future POs"
             
     vendors['Formal Cadence Strategy'] = vendors.apply(assign_formal_cadence, axis=1)
 
@@ -120,7 +120,7 @@ tab_vendors, tab_projects, tab_prose = st.tabs([
 # ==========================================
 with tab_vendors:
     st.markdown("### Strategic Relationship & Annual Framework")
-    st.markdown("**Philosophy:** Formal review cadences shouldn't be blanketed. We segment vendors into Tiers based on our dependency on them (Strategic vs. Transactional). The baseline cadence is set by the Tier, and the *agenda* of those meetings is dictated by threshold breaches across the three pillars: Quality, Engineering, and Commercial.")
+    st.markdown("**Philosophy:** Formal review cadences shouldn't be blanketed. We segment vendors into Tiers based on our dependency on them (Strategic vs. Transactional). The baseline cadence is set by the Tier, and the agenda of those meetings is dictated by breaches across the three pillars: Quality, Engineering, and Commercial.")
     
     st.subheader("Formal Review Matrix & The 3 Pillars")
     
