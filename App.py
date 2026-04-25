@@ -106,7 +106,7 @@ projects_df, vendors_df = load_data()
 md_content = load_markdown()
 
 st.title("Last Energy | External Engineering Portfolio")
-st.markdown("Dual-pane command center separating day-to-day tactical triage from strategic vendor relationship management.")
+
 
 # Switch Tab Order and Add 3rd Tab
 tab_vendors, tab_projects, tab_prose = st.tabs([
@@ -128,7 +128,7 @@ with tab_vendors:
     **The 3-Pillar Formal Review Agenda:**
     * **Engineering/Technical:** Are they adhering to the schedule? (Target: OTD > 90%)
     * **Quality/Regulatory:** Is the work right the first time? (Target: FPY > 80% & No Reg Misses)
-    * **Commercial:** Are they sticking to the baseline budget? (Target: $0 Scope Creep / Change Orders)
+    * **Commercial:** Are they sticking to the baseline budget? (Target: $0 Vendor Driven Scope Creep / Change Orders)
     """)
     
     scorecard_df = vendors_df[['Firm', 'Vendor Tier', 'Formal Cadence Strategy', 'Threshold Breaches', 'Avg First-Pass Yield (%)', 'OTD (%)', 'Total Scope Creep ($)']].copy()
@@ -204,16 +204,16 @@ with tab_vendors:
                     )
                 ))
 
-            fig_scatter.add_hline(y=80, line_dash="dot", annotation_text="Quality Target (80%)", annotation_position="bottom right")
-            fig_scatter.add_vline(x=90, line_dash="dot", annotation_text="OTD Target (90%)", annotation_position="top left")
+            fig_scatter.add_hline(y=80, line_dash="dot", annotation_text="", annotation_position="bottom right")
+            fig_scatter.add_vline(x=90, line_dash="dot", annotation_text="", annotation_position="top left")
             
             x_min, x_max = clean_vendors["OTD (%)"].min(), clean_vendors["OTD (%)"].max()
             y_min, y_max = clean_vendors["Avg First-Pass Yield (%)"].min(), clean_vendors["Avg First-Pass Yield (%)"].max()
             
             fig_scatter.update_layout(
                 xaxis_title="On-Time Delivery (OTD %)", yaxis_title="Avg First-Pass Yield (%)",
-                xaxis=dict(range=[max(0, x_min - 10), max(105, x_max + 15)]), 
-                yaxis=dict(range=[max(0, y_min - 10), max(105, y_max + 15)]),
+                xaxis=dict(range=[max(0, x_min - 10), 100]), 
+                yaxis=dict(range=[max(0, y_min - 10), 100]),
                 height=350, margin=dict(t=10),
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
             )
@@ -239,8 +239,8 @@ with tab_vendors:
 # TAB 2: PROJECT OPERATIONS & TRIAGE (Tactical)
 # ==========================================
 with tab_projects:
-    st.markdown("### Portfolio Execution & Day-to-Day Intervention")
-    st.markdown("This view is for the Engineering Leads. It tracks immediate deliverables, schedule slips, and active interventions.")
+    st.markdown("### Project Execution & Day-to-Day Intervention")
+    st.markdown("This view tracks immediate deliverables, schedule slips, and active interventions.")
     
     pc1, pc2, pc3, pc4 = st.columns(4)
     budget_overruns = len(projects_df[projects_df['Scope Creep / Change Orders ($)'] > 0])
