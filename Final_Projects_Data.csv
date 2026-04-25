@@ -1,6 +1,6 @@
-Project,External Firm(s),Phase,Available Float (Days),Schedule Delay (Days),Scope Creep / Change Orders ($),First-Pass Yield (%),NCR / SDR Count,Regulatory Milestone,Days to Next Deliverable
-Site A — Civil Package,Voss & Partners Engineering,Construction Docs,14,61,35000,82,2,Clear,21
-Site B — Geotech Study,Coastal Geotech,Field Investigation,25,0,0,98,0,Clear,45
-Site C — Permitting,Pinnacle Regulatory Advisors,Regulatory Submission,0,92,25000,65,3,MISSED,5
-Site D — Structural Review,Voss & Partners Engineering,Feasibility,30,0,0,95,0,Clear,14
-Site E — Site Inspection,SiteScan Inspections,Field Inspection,5,0,6000,90,1,Clear,7
+Project,Location,External Firm(s),Phase,Budget,Spend to Date,% Complete,Original Deadline,Forecast Completion,Available Float (Days),Schedule Delay (Days),Scope Creep / Change Orders ($),First-Pass Yield (%),NCR / SDR Count,Regulatory Milestone,Days to Next Deliverable
+Site A — Civil Package,Poland,Voss & Partners Engineering,Construction Docs,$420K,$455K,0.70,Aug 2025,Oct 2025,14,61,35000,82,2,Clear,21
+Site B — Geotech Study,UK,Coastal Geotech,Field Investigation,$110K,$38K,0.30,Jan 2026,Jan 2026,25,0,0,98,0,Clear,45
+Site C — Permitting,Romania,Pinnacle Regulatory Advisors,Regulatory Submission,$180K,$164K,0.50,Jun 2025,Sep 2025,0,92,25000,65,3,MISSED,5
+Site D — Structural Review,US,Voss & Partners Engineering,Feasibility,$95K,$18K,0.15,Apr 2026,Apr 2026,30,0,0,95,0,Clear,14
+Site E — Site Inspection,UAE,SiteScan Inspections,Field Inspection,$55K,$61K,0.95,May 2025,May 2025,5,0,6000,90,1,Clear,7
