@@ -5,19 +5,22 @@ External Engineering Worksheet
 Note: I have 'hallucinated' some additional data/metrics to support some of how I wanted to present this dashboard, from the context of the 2 xlsx pages. 
 
 **Scoring**
+
 Traditional weighted scoring formulas (e.g., 40% Quality, 30% Cost, 30% Schedule) frequently fail to capture the nuanced realities of external engineering partnerships. A firm writing regulatory documentation cannot be scored on the same scale as a firm performing civil site preparation. Abstracting these metrics into a generic score often hides the raw execution truth.
 
 To address this, the attached dashboard establishes a Threshold-Based triage system. Instead of arbitrary scoring, this framework tracks raw metrics and manages by exception.
 
-Strategic Tiering: Not all vendors require the same oversight. Vendors are presented segmented (Strategic, Preferred, Transactional) based on active SOW volume and overall spend. This dictates the baseline formal review cadence, dependant on vendor standing.
+Strategic Tiering: 
+
+Not all vendors require the same oversight. Vendors are presented segmented (Strategic, Preferred, Transactional) based on active SOW volume and overall spend. This dictates the baseline formal review cadence, dependant on vendor standing.
 
 Threshold Breaches: We establish objective baseline targets for the three core pillars:
 
-Quality/Regulatory: First-Pass Yield > 80%
+   Quality/Regulatory: First-Pass Yield > 80%
 
-Engineering/Technical: On-Time Delivery (OTD) > 90%
+   Engineering/Technical: On-Time Delivery (OTD) > 90%
 
-Commercial: $0 Scope Creep (assuming standard Fixed-Price SOWs)
+   Commercial: $0 Scope Creep (assuming standard Fixed-Price SOWs)
 
 Actionable Cadence: Breaching these thresholds dictates the urgency and the agenda of the review. In the Nuclear space I'm assume we will ALWAYS immediately action a regulator breach. Other threshold breach are eligible for review ($6k scope creep on a $500k project is noise, for example.)
 
@@ -35,7 +38,7 @@ Actionable Cadence: Breaching these thresholds dictates the urgency and the agen
    
 **Part 3: Standardized Process & Buy-In Methodology**
 
-**Prompt:** You are three months into the role and want to implement a standardized process for managing external engineering firms across all active and future projects. Walk us through what that process looks like and how you would get internal and external buy-in?
+**Prompt: You are three months into the role and want to implement a standardized process for managing external engineering firms across all active and future projects. Walk us through what that process looks like and how you would get internal and external buy-in?**
 
 Processes are easy to write, and rarely get executed. The difficulty is that process inherently adds friction. Our goal should be that our internal processes are never the schedule bottleneck. These external vendors are likely a pretty large cash draw, and we need to maintain capital efficiency by not risking operational runway with self-inflicted milestone delays. People are not machines; they will execute what actually works for them on the ground, not what is written on a procedure document.
 
@@ -53,7 +56,7 @@ To be clear: simply having fewer line items does not inherently make a process m
 
 3. An Illustrative Framework 
 
-I'm not writing a process just to write one. But to illustrate what an efficient, intentional framework looks like in my mind:
+I'm not writing a process just to write one, but I want to illustrate what an efficient, intentional framework looks like in my mind:
 
   1. Demand Signal: Who needs it, and what's the budget?
 
