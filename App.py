@@ -162,14 +162,23 @@ with tab_vendors:
         st.subheader("Vendor Risk Matrix (Quality vs. Delivery)")
         
         clean_vendors = vendors_df.copy()
-        clean_vendors = clean_vendors.dropna(subset=["OTD (%)", "Avg First-Pass Yield (%)", "Vendor Tier"])
+        
+        # 1. Clean invalid firms (prevents grouping errors from blank CSV rows)
+        clean_vendors = clean_vendors.dropna(subset=['Firm'])
+        clean_vendors = clean_vendors[~clean_vendors['Firm'].astype(str).str.lower().isin(['nan', '', 'none'])]
+        
+        # 2. Guarantee Plotly required columns are strictly numeric
+        clean_vendors["OTD (%)"] = pd.to_numeric(clean_vendors["OTD (%)"], errors="coerce").fillna(0)
+        clean_vendors["Avg First-Pass Yield (%)"] = pd.to_numeric(clean_vendors["Avg First-Pass Yield (%)"], errors="coerce").fillna(0)
+        clean_vendors["Total Spend ($)"] = pd.to_numeric(clean_vendors["Total Spend ($)"], errors="coerce").fillna(0)
         
         # Guard clause to prevent Plotly KeyError if dataframe is empty
         if clean_vendors.empty:
             st.warning("Not enough valid numerical data to plot the matrix. Check for empty rows or invalid formatting in your CSV files.")
         else:
-            # Ensure Bubble Size is strictly positive so Plotly rendering doesn't crash
-            clean_vendors['Total Spend ($)'] = clean_vendors['Total Spend ($)'].replace(0, 10000)
+            # 3. THE PLOTLY KEYERROR FIX: Plotly crashes if a 'color' group is entirely dropped due to size <= 0.
+            # Force all sizes to be strictly positive so no rows are quietly dropped under the hood.
+            clean_vendors['Total Spend ($)'] = clean_vendors['Total Spend ($)'].apply(lambda x: 10000 if x <= 0 else x)
 
             fig_scatter = px.scatter(
                 clean_vendors, x="OTD (%)", y="Avg First-Pass Yield (%)", 
@@ -191,8 +200,13 @@ with tab_vendors:
 
     with col2_v:
         st.subheader("Vendor Categorization Breakdown")
-        if not vendors_df.empty:
-            tier_counts = vendors_df['Vendor Tier'].value_counts().reset_index()
+        
+        clean_pie_vendors = vendors_df.copy()
+        clean_pie_vendors = clean_pie_vendors.dropna(subset=['Firm'])
+        clean_pie_vendors = clean_pie_vendors[~clean_pie_vendors['Firm'].astype(str).str.lower().isin(['nan', '', 'none'])]
+        
+        if not clean_pie_vendors.empty:
+            tier_counts = clean_pie_vendors['Vendor Tier'].value_counts().reset_index()
             tier_counts.columns = ['Vendor Tier', 'Count']
             fig_pie = px.pie(tier_counts, values='Count', names='Vendor Tier', hole=0.4, color_discrete_sequence=px.colors.qualitative.Set1)
             fig_pie.update_layout(height=350, margin=dict(t=10, b=10))
