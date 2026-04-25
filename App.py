@@ -144,8 +144,19 @@ with tab_vendors:
 
     with col1_v:
         st.subheader("Vendor Risk Matrix (Quality vs. Delivery)")
+        
+        # --- RESILIENCY FIX ---
+        # Force columns to numeric (turns stray strings/headers into NaN)
+        clean_vendors = vendors_df.copy()
+        for col in ["OTD (%)", "Avg First-Pass Yield (%)", "Total Spend ($)"]:
+            clean_vendors[col] = pd.to_numeric(clean_vendors[col], errors='coerce')
+            
+        # Drop the empty/invalid rows before Plotly tries to group them
+        clean_vendors = clean_vendors.dropna(subset=["OTD (%)", "Avg First-Pass Yield (%)", "Total Spend ($)", "Vendor Tier"])
+
+        # Use the cleaned dataframe for the scatter plot
         fig_scatter = px.scatter(
-            vendors_df, x="OTD (%)", y="Avg First-Pass Yield (%)", 
+            clean_vendors, x="OTD (%)", y="Avg First-Pass Yield (%)", 
             size="Total Spend ($)", hover_name="Firm", text="Firm_Stacked",
             color="Vendor Tier", color_discrete_sequence=px.colors.qualitative.Set1
         )
@@ -154,8 +165,8 @@ with tab_vendors:
         fig_scatter.add_vline(x=90, line_dash="dot", annotation_text="OTD Target (90%)", annotation_position="top left")
         
         # Adjust axes to fit all data cleanly
-        x_min = vendors_df["OTD (%)"].min() if not vendors_df.empty else 50
-        y_min = vendors_df["Avg First-Pass Yield (%)"].min() if not vendors_df.empty else 50
+        x_min = clean_vendors["OTD (%)"].min() if not clean_vendors.empty else 50
+        y_min = clean_vendors["Avg First-Pass Yield (%)"].min() if not clean_vendors.empty else 50
         fig_scatter.update_layout(
             xaxis_title="On-Time Delivery (OTD %)", yaxis_title="Avg First-Pass Yield (%)",
             xaxis=dict(range=[max(0, x_min - 10), 105]), yaxis=dict(range=[max(0, y_min - 10), 105]),
