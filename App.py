@@ -8,7 +8,7 @@ st.set_page_config(page_title="Last Energy | Vendor Portfolio", layout="wide")
 
 @st.cache_data
 def load_data():
-    # Load pristine CSV data (No more generation/mock helper functions)
+    # Load pristine CSV data
     projects = pd.read_csv("Final_Projects_Data.csv")
     vendors = pd.read_csv("Final_Vendors_Data.csv")
     
@@ -19,6 +19,22 @@ def load_data():
         projects['External Firm(s)'] = projects['External Firm(s)'].astype(str).str.strip()
     if 'Firm' in vendors.columns:
         vendors['Firm'] = vendors['Firm'].astype(str).str.strip()
+
+    # --- BULLETPROOF DATA PARSING ---
+    # Strip symbols ($, %, commas) so users can format the CSV cleanly without breaking the math
+    numeric_proj_cols = ['Scope Creep / Change Orders ($)', 'Schedule Delay (Days)', 'Available Float (Days)']
+    for col in numeric_proj_cols:
+        if col in projects.columns:
+            if projects[col].dtype == object:
+                projects[col] = projects[col].astype(str).str.replace(r'[$,%]', '', regex=True)
+            projects[col] = pd.to_numeric(projects[col], errors='coerce').fillna(0)
+            
+    numeric_vendor_cols = ['Active SOWs', 'Total Spend ($)', 'Avg First-Pass Yield (%)', 'OTD (%)', 'Total Scope Creep ($)']
+    for col in numeric_vendor_cols:
+        if col in vendors.columns:
+            if vendors[col].dtype == object:
+                vendors[col] = vendors[col].astype(str).str.replace(r'[$,%]', '', regex=True)
+            vendors[col] = pd.to_numeric(vendors[col], errors='coerce').fillna(0)
 
     # --- PROJECT METRICS ---
     projects['Budget Status'] = projects['Scope Creep / Change Orders ($)'].apply(lambda x: 'Overrun' if x > 0 else 'On Budget')
@@ -53,7 +69,7 @@ def load_data():
             return "Tier 3 (Transactional)"
     vendors['Vendor Tier'] = vendors.apply(assign_tier, axis=1)
 
-    # Threshold Breaches (Using OTD % instead of Days Delay for the vendor level)
+    # Threshold Breaches
     vendors['Threshold Breaches'] = 0
     vendors.loc[vendors['Avg First-Pass Yield (%)'] < 80, 'Threshold Breaches'] += 1 
     vendors.loc[vendors['Total Scope Creep ($)'] > 0, 'Threshold Breaches'] += 1 
@@ -145,42 +161,44 @@ with tab_vendors:
     with col1_v:
         st.subheader("Vendor Risk Matrix (Quality vs. Delivery)")
         
-        # --- RESILIENCY FIX ---
-        # Force columns to numeric (turns stray strings/headers into NaN)
         clean_vendors = vendors_df.copy()
-        for col in ["OTD (%)", "Avg First-Pass Yield (%)", "Total Spend ($)"]:
-            clean_vendors[col] = pd.to_numeric(clean_vendors[col], errors='coerce')
-            
-        # Drop the empty/invalid rows before Plotly tries to group them
-        clean_vendors = clean_vendors.dropna(subset=["OTD (%)", "Avg First-Pass Yield (%)", "Total Spend ($)", "Vendor Tier"])
-
-        # Use the cleaned dataframe for the scatter plot
-        fig_scatter = px.scatter(
-            clean_vendors, x="OTD (%)", y="Avg First-Pass Yield (%)", 
-            size="Total Spend ($)", hover_name="Firm", text="Firm_Stacked",
-            color="Vendor Tier", color_discrete_sequence=px.colors.qualitative.Set1
-        )
-        fig_scatter.update_traces(textposition='top center', textfont=dict(size=12), cliponaxis=False)
-        fig_scatter.add_hline(y=80, line_dash="dot", annotation_text="Quality Target (80%)", annotation_position="bottom right")
-        fig_scatter.add_vline(x=90, line_dash="dot", annotation_text="OTD Target (90%)", annotation_position="top left")
+        clean_vendors = clean_vendors.dropna(subset=["OTD (%)", "Avg First-Pass Yield (%)", "Vendor Tier"])
         
-        # Adjust axes to fit all data cleanly
-        x_min = clean_vendors["OTD (%)"].min() if not clean_vendors.empty else 50
-        y_min = clean_vendors["Avg First-Pass Yield (%)"].min() if not clean_vendors.empty else 50
-        fig_scatter.update_layout(
-            xaxis_title="On-Time Delivery (OTD %)", yaxis_title="Avg First-Pass Yield (%)",
-            xaxis=dict(range=[max(0, x_min - 10), 105]), yaxis=dict(range=[max(0, y_min - 10), 105]),
-            height=350, margin=dict(t=10)
-        )
-        st.plotly_chart(fig_scatter, use_container_width=True)
+        # Guard clause to prevent Plotly KeyError if dataframe is empty
+        if clean_vendors.empty:
+            st.warning("Not enough valid numerical data to plot the matrix. Check for empty rows or invalid formatting in your CSV files.")
+        else:
+            # Ensure Bubble Size is strictly positive so Plotly rendering doesn't crash
+            clean_vendors['Total Spend ($)'] = clean_vendors['Total Spend ($)'].replace(0, 10000)
+
+            fig_scatter = px.scatter(
+                clean_vendors, x="OTD (%)", y="Avg First-Pass Yield (%)", 
+                size="Total Spend ($)", hover_name="Firm", text="Firm_Stacked",
+                color="Vendor Tier", color_discrete_sequence=px.colors.qualitative.Set1
+            )
+            fig_scatter.update_traces(textposition='top center', textfont=dict(size=12), cliponaxis=False)
+            fig_scatter.add_hline(y=80, line_dash="dot", annotation_text="Quality Target (80%)", annotation_position="bottom right")
+            fig_scatter.add_vline(x=90, line_dash="dot", annotation_text="OTD Target (90%)", annotation_position="top left")
+            
+            x_min = clean_vendors["OTD (%)"].min()
+            y_min = clean_vendors["Avg First-Pass Yield (%)"].min()
+            fig_scatter.update_layout(
+                xaxis_title="On-Time Delivery (OTD %)", yaxis_title="Avg First-Pass Yield (%)",
+                xaxis=dict(range=[max(0, x_min - 10), 105]), yaxis=dict(range=[max(0, y_min - 10), 105]),
+                height=350, margin=dict(t=10)
+            )
+            st.plotly_chart(fig_scatter, use_container_width=True)
 
     with col2_v:
         st.subheader("Vendor Categorization Breakdown")
-        tier_counts = vendors_df['Vendor Tier'].value_counts().reset_index()
-        tier_counts.columns = ['Vendor Tier', 'Count']
-        fig_pie = px.pie(tier_counts, values='Count', names='Vendor Tier', hole=0.4, color_discrete_sequence=px.colors.qualitative.Set1)
-        fig_pie.update_layout(height=350, margin=dict(t=10, b=10))
-        st.plotly_chart(fig_pie, use_container_width=True)
+        if not vendors_df.empty:
+            tier_counts = vendors_df['Vendor Tier'].value_counts().reset_index()
+            tier_counts.columns = ['Vendor Tier', 'Count']
+            fig_pie = px.pie(tier_counts, values='Count', names='Vendor Tier', hole=0.4, color_discrete_sequence=px.colors.qualitative.Set1)
+            fig_pie.update_layout(height=350, margin=dict(t=10, b=10))
+            st.plotly_chart(fig_pie, use_container_width=True)
+        else:
+            st.info("No Vendor Tier data available to display.")
 
 # ==========================================
 # TAB 2: PROJECT OPERATIONS & TRIAGE (Tactical)
@@ -229,18 +247,21 @@ with tab_projects:
 
     with col2_p:
         st.subheader("Schedule Risk (Slip vs. Float)")
-        proj_sorted = projects_df.sort_values('Schedule Delay (Days)', ascending=True)
-        fig_float = go.Figure()
-        fig_float.add_trace(go.Bar(
-            y=proj_sorted['Project'], x=proj_sorted['Available Float (Days)'],
-            name='Available Float (Buffer)', orientation='h', marker=dict(color='#2ca02c'), width=0.7 
-        ))
-        fig_float.add_trace(go.Bar(
-            y=proj_sorted['Project'], x=proj_sorted['Schedule Delay (Days)'],
-            name='Actual Delay (Drift)', orientation='h', marker=dict(color='#d62728'), width=0.4 
-        ))
-        fig_float.update_layout(barmode='overlay', xaxis_title="Days", height=300, margin=dict(l=0, r=0, t=0, b=0))
-        st.plotly_chart(fig_float, use_container_width=True)
+        if not projects_df.empty:
+            proj_sorted = projects_df.sort_values('Schedule Delay (Days)', ascending=True)
+            fig_float = go.Figure()
+            fig_float.add_trace(go.Bar(
+                y=proj_sorted['Project'], x=proj_sorted['Available Float (Days)'],
+                name='Available Float (Buffer)', orientation='h', marker=dict(color='#2ca02c'), width=0.7 
+            ))
+            fig_float.add_trace(go.Bar(
+                y=proj_sorted['Project'], x=proj_sorted['Schedule Delay (Days)'],
+                name='Actual Delay (Drift)', orientation='h', marker=dict(color='#d62728'), width=0.4 
+            ))
+            fig_float.update_layout(barmode='overlay', xaxis_title="Days", height=300, margin=dict(l=0, r=0, t=0, b=0))
+            st.plotly_chart(fig_float, use_container_width=True)
+        else:
+            st.info("No Project data available to map Schedule Risk.")
 
 # ==========================================
 # TAB 3: PROSE / EXECUTIVE SUMMARY
