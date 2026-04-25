@@ -303,13 +303,13 @@ with tab_projects:
     st.markdown("Comprehensive view of all active scopes, contextualized by raw budget, completion timelines, and calculated creep.")
     
     # Dynamically pull original raw columns alongside the metrics
-    base_cols = ['Project', 'Location', 'External Firm(s)', 'Phase']
-    raw_context_cols = ['Budget', 'Spend to Date', '% Complete', 'Original Deadline', 'Forecast Completion']
-    metric_cols = ['Scope Creep / Change Orders ($)', 'Days to Next Deliverable', 'Schedule Delay (Days)', 'Slip Status']
+    impact_cols = ['Project', 'Slip Status', 'External Firm(s)', 'Phase', 'Scope Creep / Change Orders ($)', 'Days to Next Deliverable','% Complete']
+    raw_context_cols = [ 'Original Deadline', 'Schedule Delay (Days)', 'Forecast Completion']
+    other_cols = [ 'Budget', 'Spend to Date','Location']
     
     # Build the final list based on what actually exists in the CSV to prevent crashes
     final_cols = []
-    for col_list in [base_cols, raw_context_cols, metric_cols]:
+    for col_list in [impact_cols, raw_context_cols, other_cols]:
         final_cols.extend([c for c in col_list if c in projects_df.columns])
         
     overview_df = projects_df[final_cols].copy()
