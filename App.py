@@ -6,7 +6,7 @@ import os
 
 st.set_page_config(page_title="Last Energy | Vendor Portfolio", layout="wide")
 
-@st.cache_data
+# Removed @st.cache_data to prevent cache poisoning when actively editing local CSV files
 def load_data():
     # Load pristine CSV data
     projects = pd.read_csv("Final_Projects_Data.csv")
@@ -163,38 +163,59 @@ with tab_vendors:
         
         clean_vendors = vendors_df.copy()
         
-        # 1. Clean invalid firms (prevents grouping errors from blank CSV rows)
         clean_vendors = clean_vendors.dropna(subset=['Firm'])
         clean_vendors = clean_vendors[~clean_vendors['Firm'].astype(str).str.lower().isin(['nan', '', 'none'])]
         
-        # 2. Guarantee Plotly required columns are strictly numeric
         clean_vendors["OTD (%)"] = pd.to_numeric(clean_vendors["OTD (%)"], errors="coerce").fillna(0)
         clean_vendors["Avg First-Pass Yield (%)"] = pd.to_numeric(clean_vendors["Avg First-Pass Yield (%)"], errors="coerce").fillna(0)
         clean_vendors["Total Spend ($)"] = pd.to_numeric(clean_vendors["Total Spend ($)"], errors="coerce").fillna(0)
         
-        # Guard clause to prevent Plotly KeyError if dataframe is empty
         if clean_vendors.empty:
             st.warning("Not enough valid numerical data to plot the matrix. Check for empty rows or invalid formatting in your CSV files.")
         else:
-            # 3. THE PLOTLY KEYERROR FIX: Plotly crashes if a 'color' group is entirely dropped due to size <= 0.
-            # Force all sizes to be strictly positive so no rows are quietly dropped under the hood.
-            clean_vendors['Total Spend ($)'] = clean_vendors['Total Spend ($)'].apply(lambda x: 10000 if x <= 0 else x)
+            # BYPASS PLOTLY EXPRESS ENTIRELY to eliminate the underlying grouping bug
+            fig_scatter = go.Figure()
+            colors = px.colors.qualitative.Set1
+            tiers = clean_vendors['Vendor Tier'].unique()
+            
+            # Dynamic bubble sizing logic
+            max_spend = clean_vendors["Total Spend ($)"].max()
+            sizeref = 2.0 * max_spend / (40.0 ** 2) if max_spend > 0 else 1
+            
+            for i, tier in enumerate(tiers):
+                tier_data = clean_vendors[clean_vendors['Vendor Tier'] == tier]
+                
+                fig_scatter.add_trace(go.Scatter(
+                    x=tier_data["OTD (%)"],
+                    y=tier_data["Avg First-Pass Yield (%)"],
+                    mode='markers+text',
+                    name=tier,
+                    text=tier_data["Firm_Stacked"],
+                    textposition='top center',
+                    hoverinfo='text',
+                    hovertext=tier_data["Firm"] + "<br>Spend: $" + tier_data["Total Spend ($)"].apply(lambda x: f"{x:,.0f}"),
+                    marker=dict(
+                        size=tier_data["Total Spend ($)"].apply(lambda x: 10000 if x <= 0 else x), # Failsafe minimum size
+                        sizemode='area',
+                        sizeref=sizeref,
+                        sizemin=8,
+                        color=colors[i % len(colors)],
+                        line=dict(width=1, color='white')
+                    )
+                ))
 
-            fig_scatter = px.scatter(
-                clean_vendors, x="OTD (%)", y="Avg First-Pass Yield (%)", 
-                size="Total Spend ($)", hover_name="Firm", text="Firm_Stacked",
-                color="Vendor Tier", color_discrete_sequence=px.colors.qualitative.Set1
-            )
-            fig_scatter.update_traces(textposition='top center', textfont=dict(size=12), cliponaxis=False)
             fig_scatter.add_hline(y=80, line_dash="dot", annotation_text="Quality Target (80%)", annotation_position="bottom right")
             fig_scatter.add_vline(x=90, line_dash="dot", annotation_text="OTD Target (90%)", annotation_position="top left")
             
-            x_min = clean_vendors["OTD (%)"].min()
-            y_min = clean_vendors["Avg First-Pass Yield (%)"].min()
+            x_min, x_max = clean_vendors["OTD (%)"].min(), clean_vendors["OTD (%)"].max()
+            y_min, y_max = clean_vendors["Avg First-Pass Yield (%)"].min(), clean_vendors["Avg First-Pass Yield (%)"].max()
+            
             fig_scatter.update_layout(
                 xaxis_title="On-Time Delivery (OTD %)", yaxis_title="Avg First-Pass Yield (%)",
-                xaxis=dict(range=[max(0, x_min - 10), 105]), yaxis=dict(range=[max(0, y_min - 10), 105]),
-                height=350, margin=dict(t=10)
+                xaxis=dict(range=[max(0, x_min - 10), max(105, x_max + 15)]), 
+                yaxis=dict(range=[max(0, y_min - 10), max(105, y_max + 15)]),
+                height=350, margin=dict(t=10),
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
             )
             st.plotly_chart(fig_scatter, use_container_width=True)
 
