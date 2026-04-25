@@ -6,9 +6,8 @@ import os
 
 st.set_page_config(page_title="Last Energy | Vendor Portfolio", layout="wide")
 
-# Removed @st.cache_data to prevent cache poisoning when actively editing local CSV files
 def load_data():
-    # Load pristine CSV data
+    # Load CSV data
     projects = pd.read_csv("Final_Projects_Data.csv")
     vendors = pd.read_csv("Final_Vendors_Data.csv")
     
@@ -20,8 +19,8 @@ def load_data():
     if 'Firm' in vendors.columns:
         vendors['Firm'] = vendors['Firm'].astype(str).str.strip()
 
-    # --- BULLETPROOF DATA PARSING ---
-    # Strip symbols ($, %, commas) so users can format the CSV cleanly without breaking the math
+    # --- DATA PARSING ---
+    # Strip symbols
     numeric_proj_cols = ['Scope Creep / Change Orders ($)', 'Schedule Delay (Days)', 'Available Float (Days)']
     for col in numeric_proj_cols:
         if col in projects.columns:
@@ -105,14 +104,14 @@ def load_markdown():
 projects_df, vendors_df = load_data()
 md_content = load_markdown()
 
-st.title("Last Energy | External Engineering Portfolio")
+st.title("Last Energy | External Engineering")
 
 
 # Switch Tab Order and Add 3rd Tab
 tab_vendors, tab_projects, tab_prose = st.tabs([
-    "Part 1: Strategic Vendor Scorecard (Formal)", 
-    "Part 2: Project Operations (Tactical)", 
-    "Part 3: Executive Summary"
+    "Part 1: Vendor Management", 
+    "Part 2: Projects & Operations", 
+    "Part 3: Assignment Responses"
 ])
 
 # ==========================================
@@ -126,7 +125,7 @@ with tab_vendors:
     
     st.info("""
     **The 3-Pillar Formal Review Agenda:**
-    * **Engineering/Technical:** Are they adhering to the schedule? (Target: OTD > 90%)
+    * **Engineering/Technical:** Are they adhering to the SOW & schedule? (Target: OTD > 90%)
     * **Quality/Regulatory:** Is the work right the first time? (Target: FPY > 80% & No Reg Misses)
     * **Commercial:** Are they sticking to the baseline budget? (Target: $0 Vendor Driven Scope Creep / Change Orders)
     """)
@@ -173,7 +172,7 @@ with tab_vendors:
         if clean_vendors.empty:
             st.warning("Not enough valid numerical data to plot the matrix. Check for empty rows or invalid formatting in your CSV files.")
         else:
-            # BYPASS PLOTLY EXPRESS ENTIRELY to eliminate the underlying grouping bug
+            
             fig_scatter = go.Figure()
             colors = px.colors.qualitative.Set1
             tiers = clean_vendors['Vendor Tier'].unique()
